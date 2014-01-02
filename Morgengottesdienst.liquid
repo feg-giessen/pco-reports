@@ -1,0 +1,166 @@
+<!--
+INTERNAL CODE
+    {% assign selected_item_notes = plan.ministry.plan_item_note_categories %}
+    
+    {% assign anlass = '' %}
+    {% for note in plan.notes %}
+        {% if note.category_name == 'Anlass' and note.note != 'Gottesdienst' %}
+            {% assign anlass = note.note %}
+        {% endif %}
+    {% endfor %}
+-->
+<html>
+	<head>
+    	<title>{{ plan.ministry.name }} - {{ plan.dates }}</title>
+		<style>
+            * { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; }
+			body { padding:0; margin:0; }
+    
+            table, tr, th, td { border-collapse:collapse; }
+            td, th { font-size:10pt; }
+            
+            span.small { font-size:9pt; }
+
+            table.plan { width:100% }
+            table.plan th { text-align:left; font-weight:normal; }
+            table.plan td, table.plan th { border: 1px solid black; padding: 2px 4px; vertical-align:top; }
+
+        	tr.title-head th { border:0 none; background:#CFCFCF; font-weight:bold; }
+        	tr.title-head { border:1px solid #999; }
+            
+            tr.col-head th { background:#EFEFEF; font-weight:bold; }
+            td.plan-header { background:#F5F5F5; font-weight:bold; }            
+  
+            td.aright { text-align:right; }
+            tr.pre-item td { font-style:italic; }
+            
+            tr.pre-split td { height:5px; background-color:#FAFAFA; }
+            tr.head-split td { height:10px; background-color:#FAFAFA; border-right:none; border-top:none; border-left:none; }            
+            
+            table#notes { margin-top:10px; border:0 none; } 
+        	table#notes, table#notes tr, table#notes td, table#notes th { border:0 none; } 
+            table#notes th { vertical-align:top; font-weight:bold; text-align: left; padding-right: 30px; }
+            table#notes td { padding-bottom:5px; } 
+		</style>
+	</head>
+	<body>
+{% for time in plan.plan_times limit:1 %}
+        <table class="plan">
+            <thead>
+            	<tr class="title-head">
+                    <th colspan="2" style="text-align:left">FeG Gießen</th>
+                    <th colspan="5" style="text-align:center">{% if plan.series_title != '' %}{{plan.series_title}} - {% endif %}{% if plan.plan_title != ''  %}{{ plan.plan_title }}{% elsif anlass != '' %}{{ anlass }}{% else %}G O T T E S D I E N S T{% endif %}</th>
+                    <th colspan="2" style="text-align:right">{{ time.starts_at | date: '%d.%m.%Y, %H:%M Uhr' }}</th>
+                </tr>
+                <tr class="head-split"><td colspan="9"></td></tr>
+            	<tr class="col-head">
+                    <th>Nr.</th><th>Programmpunkt</th><th>Akteur</th><th>Uhrzeit</th><th>Min.</th><th>Position/Licht</th><th>Präsentation</th><th>Ton</th><th>Bemerkung</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% assign prevIsPre = false %}
+            {% assign iNumber = 0 %}
+            {% for item in plan.items %}
+                {% assign itemSkip = false %}
+                {% for note in item.notes %}
+                    {% if note.category_name == "Nicht in Ausdruck" %}
+                        {% if note.note != '' %}
+                            {% assign itemSkip = true %}
+                        {% else %}
+                            {% assign itemSkip = false %}
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+              {% if itemSkip == false %}
+                  {% if item.is_preservice == false and prevIsPre == true and item.item_type != "Header" %}
+                    {% assign iNumber = forloop.index0 %}
+                    <tr class="pre-split"><td colspan="9"></td></tr>
+                  {% elsif item.is_preservice == false and prevIsPre == true %}
+                    {% assign iNumber = forloop.index0 | plus: 1 %}
+                    <tr class="pre-split"><td colspan="9"></td></tr>
+                  {% endif %}
+                  {% assign prevIsPre = item.is_preservice %}
+                  
+                	<tr class="{% if item.is_preservice %} pre-item {% endif %}">
+                    {% if item.item_type == "Header" %}
+                      <td colspan="9" class="plan-header">{{ item.title }}</td>
+                    {% else %}
+                        <td>{% if item.is_preservice == false and item.is_postservice == false %}
+                            {{ forloop.index | minus: iNumber }}.
+                        {% endif %}</td>          
+                        <td>{% if item.song %}Lied{% else %}{{ item.title }}{% endif %}</td>
+                        <td>
+                            {% for note in item.notes %}
+                                {% if note.category_name == "Akteur" %}
+                                    {{ note.note }}
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                        <td>
+                        	{% for item_time in item.times %}{% if item_time.time_id == time.id %}{{ item_time.actual_time | date: '%H:%M' | downcase }} {% endif %}{% endfor %}
+                        </td>
+                        <td class="aright">{{ item.clean_length }}</td>
+                        <td>
+                            {% for note in item.notes %}
+                                {% if note.category_name == "Licht" %}
+                                    {{ note.note }}
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% for note in item.notes %}
+                                {% if note.category_name == "Präsentation" %}
+                                    {{ note.note }}
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% for note in item.notes %}
+                                {% if note.category_name == "Ton" %}
+                                    {{ note.note }}
+                                {% endif %}
+                            {% endfor %}
+                        </td>            
+                        <td>{% if item.song %}<strong>{{ item.song.title }}</strong>{% if item.song.ccli_id %} ({{ item.song.ccli_id }})<br /><span class="small">{{ item.item_sequence }}</span>{% endif %}<br />{% endif %}{% if item.description != '' %}{{ item.description }}<br/>{% endif %}
+                        
+            {% for my_note in selected_item_notes %}
+            {% for note in item.notes %}
+            {% if note.category_name != "Akteur" and note.category_name != "Licht" and note.category_name != "Präsentation" and note.category_name != "Ton" and (note.category_name == my_note.name or note.category_name == my_note) %}
+            <strong>{{ note.category_name }}:</strong> {{ note.note }}<br/>
+            {% endif %}
+            {% endfor %}
+            {% endfor %}</td>
+                 {% endif %}
+                  </tr>
+              {% endif %} <!-- item skip -->
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endfor %}
+        <!-- PLAN PEOPLE -->
+        {% assign isFirstPerson = true %}
+        <div class="persons">
+        {% for plan_person in plan.plan_people_not_declined %}
+            {% if plan_person.category.name != "Musik" %}
+                {% if isFirstPerson == false %}, {% endif %}{{ plan_person.person.name }} (<em>{% assign pos_without_bracket = plan_person.position | split: ' (' %}{{ pos_without_bracket.first }}</em>)
+                {% assign isFirstPerson = false %}
+            {% endif %}
+        {% endfor %}
+        </div>
+        
+        <!-- PLAN NOTES -->
+        {% if print_plan_notes == true %}
+        <table id="notes">
+            {% for note in plan.notes %}
+                {% if note.category_name != 'Anlass' %}
+                    <tr>
+                        <th width="1%">{{ note.category_name }}</th>
+                        <td> {{ note.note }}</td>
+                    </tr>
+                {% endif %}
+            {% endfor %}
+        </table>
+        {% endif %}
+<!-- END PLAN NOTES -->
+	</body>
+</html>

@@ -1,0 +1,135 @@
+<!--
+QUICK CUSTOMIZATION:
+
+	PLAN NOTE OPTIONS
+		{% assign print_plan_notes = true %}
+
+		TO ONLY PRINT SPECIFIC PLAN NOTE CATEGORIES SET THIS TO false
+		{% assign all_plan_notes = true %}
+
+		SET INDIVIDUAL CATEGORY NAMES OF PLAN NOTES TO PRINT (and set above to false)
+		{% array my_plan_notes = "Vocals", "Band" %}
+
+	PLAN ITEM OPTIONS
+		{% assign print_plan_items = true %}
+		{% assign print_plan_item_times = false %}
+		{% assign print_plan_item_length = true %}
+		{% assign print_song_key = true %}
+		{% assign print_arrangement_name = false %}
+		{% assign print_song_bpm = true %}
+		{% assign print_song_sequence = true %}
+		
+		TO ONLY PRINT SPECIFIC ITEM NOTE CATEGORIES SET THIS TO false
+		{% assign all_item_notes = true %}
+
+		CATEGORY NAMES OF ITEM NOTES TO PRINT
+		{% array my_notes = "Person", "Lights" %}
+		
+		TO PRINT ITEM NOTES IN COLUMNS SET TO TRUE
+		{% assign notes_in_columns = false %}
+
+	PLAN PEOPLE OPTIONS
+		{% assign print_plan_people = true %}
+
+		TO ONLY PRINT SPECIFIC PEOPLE CATEGORIES SET THIS TO false
+		{% assign all_categories = true %}
+
+		SET INDIVIDUAL CATEGORY NAMES OF PEOPLE TO PRINT (and set above to false)
+		{% array my_categories = "Vocals", "Band", "Audio/Visual" %}
+
+	OTHER OPTIONS
+		{% assign print_rehearsal_times = true %}
+		{% assign force_page_break = false %}
+
+
+INTERNAL CODE
+	{% if all_item_notes == true %}
+		{% assign selected_item_notes = plan.ministry.plan_item_note_categories %}
+	{% else %}
+		{% assign selected_item_notes = my_notes %}
+	{% endif %}
+
+-->
+
+<html>
+	<head>
+		<title>{{ plan.ministry.name }} - {{ plan.dates }}</title>
+<style>
+	body { font-family:Arial, Helvetica, sans-serif; font-size:10pt; padding: 0; margin:0; }
+        td, th { font-size:10pt; }
+	table.plan th { text-align:left; font-weight:normal; }
+	table.plan td, table.plan th { border: 1px solid black; padding: 2px 4px; vertical-align:top; }
+	table, tr, th, td { border-collapse:collapse; }
+	tr.title-head th { border:0 none; background:#CFCFCF; font-weight:bold; }
+	tr.title-head { border:1px solid #999; }
+        tr.col-head th, td.plan-header { background:#EFEFEF; font-weight:bold; }
+	td.aright { text-align:right; }
+
+	table#notes { margin-top:10px; border:0 none; } 
+	table#notes, table#notes tr, table#notes td, table#notes th { border:0 none; } 
+        table#notes th { vertical-align:top; font-weight:bold; text-align: left; padding-right: 30px; }
+        table#notes td { padding-bottom:5px; } 
+  
+        tr.pre-split td { height:5px; background-color:#FAFAFA; }
+        tr.pre-item td { font-style:italic; }
+</style>
+	</head>
+	<body>
+{% for time in plan.plan_times limit:1 %}
+<table class="plan">
+	<thead>
+    	<tr class="title-head">
+
+<th colspan="3">{{ time.starts_at | date: '%d.%m.%Y' | downcase }}</th><th colspan="3">{% if plan.series_title %}{{plan.series_title}} - {% endif %}{{ plan.plan_title }}</th></tr>
+    	<tr class="col-head"><th>Nr.</th><th>Uhrzeit</th><th>Min</th><th>Programmpunkt</th><th>Verantwortlicher</th><th>Bemerkung</th></tr>
+    </thead>
+    <tbody>
+    {% assign prevIsPre = false %}
+    {% assign iNumber = 0 %}
+    {% for item in plan.items %}
+      {% if item.is_preservice == false and prevIsPre == true %}{% assign iNumber = forloop.index0 %}<tr class="pre-split"><td colspan="6"></td></tr>{% endif %}
+      {% assign prevIsPre = item.is_preservice %}
+      
+    	<tr class="{% if item.is_preservice %} pre-item {% endif %}">
+        {% if item.item_type == "Header" %}
+          <td colspan="6" class="plan-header">{{ item.title }}</td>
+        {% else %}
+          <td>{{ forloop.index | minus: iNumber }}.</td>
+            <td>
+            	{% for item_time in item.times %}{% if item_time.time_id == time.id %}{{ item_time.actual_time | date: '%H:%M' | downcase }} {% endif %}{% endfor %}
+            </td>
+            <td class="aright">{{ item.clean_length }}</td>
+            <td>{% if item.song %}Lied{% else %}{{ item.title }}{% endif %}</td>
+            <td>
+{% for note in item.notes %}
+{% if note.category_name == "Verantwortlicher" %}
+{{ note.note }}
+{% endif %}
+{% endfor %}</td>
+          <td>{% if item.song %}<strong>{{ item.song.title }}</strong><br />{% endif %}
+            
+{% for my_note in selected_item_notes %}
+{% for note in item.notes %}
+{% if note.category_name != "Verantwortlicher" and (note.category_name == my_note.name or note.category_name == my_note) %}
+<strong>{{ note.category_name }}:</strong> {{ note.note }}<br/>
+{% endif %}
+{% endfor %}
+{% endfor %}</td>
+     {% endif %}
+      </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endfor %}
+<!-- PLAN PEOPLE -->
+{% assign isFirstPerson = true %}
+<div class="persons"><strong>Planung: </strong>
+{% for plan_person in plan.plan_people_not_declined %}
+  {% if plan_person.category.name == "Planung" %}
+            {% if isFirstPerson == false %}<span>, </span>{% endif %}<span>{{ plan_person.person.name }} (<em>{{ plan_person.position }}</em>)</span>
+    {% assign isFirstPerson = false %}
+  {% endif %}
+{% endfor %}
+</div>
+</body>
+</html>
