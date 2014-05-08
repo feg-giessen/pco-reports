@@ -142,7 +142,7 @@ INTERNAL CODE
         <div class="persons">
         {% for plan_person in plan.plan_people_not_declined %}
             {% if plan_person.category.name != "Musik" or plan_person.position contains "Musikverantwortlicher" %}
-                {% if isFirstPerson == false %}, {% endif %}{{ plan_person.person.name }} (<em>{% assign pos_without_bracket = plan_person.position | split: ' (' %}{{ pos_without_bracket.first }}</em>)
+                {% if isFirstPerson == false %}, {% endif %}{{ plan_person.person.name }} (<em>{% assign pos_without_bracket = plan_person.position | split: ' (' %}{{ pos_without_bracket.first | remove: '01 ' }}</em>)
                 {% assign isFirstPerson = false %}
             {% endif %}
         {% endfor %}
