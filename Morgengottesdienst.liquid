@@ -149,10 +149,9 @@ INTERNAL CODE
         </div>
         
         <!-- PLAN NOTES -->
-        {% if print_plan_notes == true %}
         <table id="notes">
             {% for note in plan.notes %}
-                {% if note.category_name != 'Anlass' %}
+                {% if note.category_name == 'Taufablauf' %}
                     <tr>
                         <th width="1%">{{ note.category_name }}</th>
                         <td> {{ note.note }}</td>
@@ -160,7 +159,6 @@ INTERNAL CODE
                 {% endif %}
             {% endfor %}
         </table>
-        {% endif %}
 <!-- END PLAN NOTES -->
 	</body>
 </html>
